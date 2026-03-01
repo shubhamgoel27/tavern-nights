@@ -1,17 +1,23 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useMachine } from '@xstate/react';
 import { gameMachine } from '../game/machine';
-import { Row, BettingAction } from '../game/types';
+import type { Row, BettingAction } from '../game/types';
 import { evaluateHand } from '../game/evaluator';
 import CardRow from './CardRow';
 import PlayerHand from './PlayerHand';
 import ChipStack from './ChipStack';
 import BettingPanel from './BettingPanel';
+import HowToPlayModal from './HowToPlayModal';
+import CheatSheet from './CheatSheet';
+import TutorialOverlay, { TUTORIAL_STEPS } from './TutorialOverlay';
 
 export default function GameBoard() {
   const [state, send] = useMachine(gameMachine);
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
   const [showBetting, setShowBetting] = useState(false);
+  const [showHowToPlay, setShowHowToPlay] = useState(false);
+  const [tutorialActive, setTutorialActive] = useState(false);
+  const [tutorialStep, setTutorialStep] = useState(0);
 
   const ctx = state.context;
   const { game, message } = ctx;
@@ -32,11 +38,94 @@ export default function GameBoard() {
     setShowBetting(false);
   }, [isBettingPhase, hasPendingAIBet]);
 
+  // Tutorial step advancement (state-based)
+  const prevBettingPhase = useRef(isBettingPhase);
+  useEffect(() => {
+    if (!tutorialActive) {
+      prevBettingPhase.current = isBettingPhase;
+      return;
+    }
+
+    // End tutorial if round result or match over
+    if (isRoundResult || isMatchOver) {
+      setTutorialActive(false);
+      setTutorialStep(0);
+      return;
+    }
+
+    const enteredBetting = isBettingPhase && !prevBettingPhase.current;
+    const leftBetting = !isBettingPhase && prevBettingPhase.current;
+
+    // Steps 0-9: see TUTORIAL_STEPS in TutorialOverlay.tsx
+    // 3: place card → enters betting   → step 4
+    // 4: bet/check → leaves betting     → step 5
+    // 6: place card → enters betting    → step 7
+    // 7: bet        → leaves betting    → step 8
+    if (tutorialStep === 3 && enteredBetting) setTutorialStep(4);
+    if (tutorialStep === 4 && leftBetting) setTutorialStep(5);
+    if (tutorialStep === 6 && enteredBetting) setTutorialStep(7);
+    if (tutorialStep === 7 && leftBetting) setTutorialStep(8);
+
+    prevBettingPhase.current = isBettingPhase;
+  }, [tutorialActive, tutorialStep, isBettingPhase, isRoundResult, isMatchOver]);
+
+  // Card selection advances step 2 → 3
+  useEffect(() => {
+    if (tutorialActive && tutorialStep === 2 && selectedCard !== null) {
+      setTutorialStep(3);
+    }
+  }, [tutorialActive, tutorialStep, selectedCard]);
+
+  // Timer-based advances: 0 (welcome), 1 (objective), 5 (opponent), 8 (face cards), 9 (farewell)
+  useEffect(() => {
+    if (!tutorialActive) return;
+    if (tutorialStep === 0) {
+      const t = setTimeout(() => setTutorialStep(1), 2500);
+      return () => clearTimeout(t);
+    }
+    if (tutorialStep === 1) {
+      const t = setTimeout(() => setTutorialStep(2), 4000);
+      return () => clearTimeout(t);
+    }
+    if (tutorialStep === 5) {
+      const t = setTimeout(() => setTutorialStep(6), 2500);
+      return () => clearTimeout(t);
+    }
+    if (tutorialStep === 8) {
+      const t = setTimeout(() => setTutorialStep(9), 3000);
+      return () => clearTimeout(t);
+    }
+    if (tutorialStep === 9) {
+      const t = setTimeout(() => {
+        setTutorialActive(false);
+        setTutorialStep(0);
+      }, 4000);
+      return () => clearTimeout(t);
+    }
+  }, [tutorialActive, tutorialStep]);
+
+  // Pending face card choice: user must pick ability vs value
+  const [pendingFacePlay, setPendingFacePlay] = useState<{ cardId: string; row: Row } | null>(null);
+
   const handlePlayCard = useCallback((row: Row) => {
     if (!selectedCard || !isPlayerTurn) return;
+    // Check if the selected card is a face card (not joker)
+    const card = game.human.hand.find(c => c.id === selectedCard);
+    if (card?.type === 'face') {
+      // Show ability choice modal
+      setPendingFacePlay({ cardId: selectedCard, row });
+      setSelectedCard(null);
+      return;
+    }
     send({ type: 'PLAY_CARD', cardId: selectedCard, targetRow: row });
     setSelectedCard(null);
-  }, [selectedCard, isPlayerTurn, send]);
+  }, [selectedCard, isPlayerTurn, send, game.human.hand]);
+
+  const handleAbilityChoice = useCallback((useAbility: boolean) => {
+    if (!pendingFacePlay) return;
+    send({ type: 'PLAY_CARD', cardId: pendingFacePlay.cardId, targetRow: pendingFacePlay.row, useAbility });
+    setPendingFacePlay(null);
+  }, [pendingFacePlay, send]);
 
   const handleBet = useCallback((action: BettingAction, amount: number) => {
     send({ type: 'BET', action, amount });
@@ -65,8 +154,8 @@ export default function GameBoard() {
         <div className="glass rounded-2xl p-6 max-w-sm text-center space-y-4">
           <p className="text-tavern-text-dim text-sm leading-relaxed">
             Build poker hands across two rows — Frontline and Backline.
-            Win both to claim the pot. Manage your 10 cards wisely across three rounds.
-            Face cards wield special abilities. Know when to hold, when to fold.
+            Win both to claim the pot. Your opponent's cards are hidden until the round ends.
+            Manage your 10 cards wisely as antes escalate. Know when to hold, when to fold.
           </p>
           <button
             onClick={() => send({ type: 'START_MATCH' })}
@@ -76,6 +165,26 @@ export default function GameBoard() {
               active:scale-95"
           >
             Enter the Tavern
+          </button>
+          <button
+            onClick={() => setShowHowToPlay(true)}
+            className="px-6 py-2 rounded-xl bg-tavern-gold/10 border border-tavern-gold/20
+              text-tavern-gold/80 font-display text-sm tracking-wider
+              hover:bg-tavern-gold/20 hover:border-tavern-gold/30 transition-colors"
+          >
+            How to Play
+          </button>
+          <button
+            onClick={() => {
+              setTutorialActive(true);
+              setTutorialStep(0);
+              send({ type: 'START_MATCH' });
+            }}
+            className="px-6 py-2 rounded-xl bg-tavern-green/10 border border-tavern-green/20
+              text-tavern-green/80 font-display text-sm tracking-wider
+              hover:bg-tavern-green/20 hover:border-tavern-green/30 transition-colors"
+          >
+            Play Tutorial
           </button>
         </div>
 
@@ -89,6 +198,8 @@ export default function GameBoard() {
         <div className="absolute top-8 right-8 opacity-20 rotate-[12deg]">
           <div className="w-16 h-23 rounded-lg bg-gradient-to-br from-tavern-card to-tavern-surface border border-tavern-border" />
         </div>
+
+        {showHowToPlay && <HowToPlayModal onClose={() => setShowHowToPlay(false)} />}
       </div>
     );
   }
@@ -134,9 +245,10 @@ export default function GameBoard() {
           </span>
         </div>
         <ChipStack amount={game.pot} label="Pot" highlight />
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
           <ChipStack amount={game.ai.chips} label="Opponent" />
           <ChipStack amount={game.human.chips} label="You" />
+          <CheatSheet />
         </div>
       </div>
 
@@ -174,12 +286,14 @@ export default function GameBoard() {
             row="backline"
             isPlayer={false}
             evaluation={aiBackEval}
+            faceDown={!isRoundResult}
           />
           <CardRow
             cards={game.ai.board.frontline.cards}
             row="frontline"
             isPlayer={false}
             evaluation={aiFrontEval}
+            faceDown={!isRoundResult}
           />
         </div>
 
@@ -191,7 +305,7 @@ export default function GameBoard() {
         </div>
 
         {/* Player's side */}
-        <div className="space-y-1.5">
+        <div className="space-y-1.5" data-tutorial-highlight={tutorialActive && TUTORIAL_STEPS[tutorialStep]?.highlight === 'rows' ? 'true' : undefined}>
           <CardRow
             cards={game.human.board.frontline.cards}
             row="frontline"
@@ -224,7 +338,7 @@ export default function GameBoard() {
       <div className="border-t border-tavern-border/30 px-4 py-3 bg-tavern-surface/50">
         {/* Betting Panel — shown in betting phase or when AI has an outstanding bet */}
         {((isBettingPhase || hasPendingAIBet) && showBetting) && (
-          <div className="mb-3">
+          <div className="mb-3" data-tutorial-highlight={tutorialActive && TUTORIAL_STEPS[tutorialStep]?.highlight === 'betting' ? 'true' : undefined}>
             <BettingPanel
               onBet={handleBet}
               currentBet={game.currentBet}
@@ -249,12 +363,14 @@ export default function GameBoard() {
           </div>
         )}
 
-        <PlayerHand
-          cards={game.human.hand}
-          selectedCardId={selectedCard}
-          onSelectCard={setSelectedCard}
-          disabled={!isPlayerTurn || hasPendingAIBet || isBettingPhase}
-        />
+        <div data-tutorial-highlight={tutorialActive && TUTORIAL_STEPS[tutorialStep]?.highlight === 'hand' ? 'true' : undefined}>
+          <PlayerHand
+            cards={game.human.hand}
+            selectedCardId={selectedCard}
+            onSelectCard={setSelectedCard}
+            disabled={!isPlayerTurn || hasPendingAIBet || isBettingPhase}
+          />
+        </div>
 
         {isPlayerTurn && !hasPendingAIBet && selectedCard && (
           <p className="text-center text-[10px] text-tavern-gold/60 mt-2 tracking-wider">
@@ -267,6 +383,69 @@ export default function GameBoard() {
           </p>
         )}
       </div>
+
+      {/* Tutorial Overlay */}
+      {tutorialActive && TUTORIAL_STEPS[tutorialStep] && (
+        <TutorialOverlay
+          step={TUTORIAL_STEPS[tutorialStep]}
+          stepIndex={tutorialStep}
+          totalSteps={TUTORIAL_STEPS.length}
+          onSkip={() => {
+            setTutorialActive(false);
+            setTutorialStep(0);
+          }}
+        />
+      )}
+
+      {/* Face Card Ability Choice Modal */}
+      {pendingFacePlay && (() => {
+        const card = game.human.hand.find(c => c.id === pendingFacePlay.cardId);
+        if (!card || card.type !== 'face') return null;
+        const abilityNames: Record<string, { title: string; icon: string; desc: string; value: number }> = {
+          jack: { title: 'Spy', icon: '\uD83D\uDC41', desc: 'Place on opponent\'s board + draw 2 cards', value: 11 },
+          queen: { title: 'Medic', icon: '\u2695', desc: 'Revive highest card from graveyard to this row', value: 12 },
+          king: { title: 'Commander', icon: '\u2694', desc: 'Win this row = opponent loses 5 extra chips', value: 13 },
+          ace: { title: 'Scorcher', icon: '\uD83D\uDD25', desc: 'Destroy opponent\'s highest card in this row', value: 14 },
+        };
+        const info = abilityNames[card.faceRank];
+        if (!info) return null;
+        return (
+          <div className="absolute inset-0 bg-tavern-bg/70 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="glass rounded-2xl p-5 max-w-xs w-full text-center space-y-4 animate-slide-up">
+              <div className="text-2xl">{info.icon}</div>
+              <h3 className="font-display text-lg text-tavern-gold tracking-wider">
+                {card.faceRank.charAt(0).toUpperCase() + card.faceRank.slice(1)} — {info.title}
+              </h3>
+              <p className="text-xs text-tavern-text-dim">
+                Choose how to play this card:
+              </p>
+              <div className="space-y-2">
+                <button
+                  onClick={() => handleAbilityChoice(true)}
+                  className="w-full px-4 py-2.5 rounded-xl bg-tavern-gold/15 border border-tavern-gold/30
+                    text-tavern-gold font-display text-sm tracking-wider
+                    hover:bg-tavern-gold/25 transition-colors text-left"
+                >
+                  <span className="block font-bold">Activate Ability</span>
+                  <span className="block text-[10px] text-tavern-text-dim mt-0.5">{info.desc}</span>
+                  <span className="block text-[9px] text-tavern-red/60 mt-0.5">Card won't count toward your poker hand</span>
+                </button>
+                <button
+                  onClick={() => handleAbilityChoice(false)}
+                  className="w-full px-4 py-2.5 rounded-xl bg-tavern-surface border border-tavern-border
+                    text-tavern-text font-display text-sm tracking-wider
+                    hover:bg-tavern-surface/80 hover:border-tavern-gold/20 transition-colors text-left"
+                >
+                  <span className="block font-bold">Play as Value Card</span>
+                  <span className="block text-[10px] text-tavern-text-dim mt-0.5">
+                    Counts as {info.value} in your poker hand (no ability)
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Round Result Overlay */}
       {isRoundResult && game.lastRoundResult && (

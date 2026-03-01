@@ -2,7 +2,10 @@
 // Pure functions that produce new game states from actions.
 
 import {
-  GameState, GameConfig, DEFAULT_CONFIG, Card, FaceCard, PlayerSide, Row,
+  DEFAULT_CONFIG,
+} from './types';
+import type {
+  GameState, GameConfig, Card, FaceCard, PlayerSide, Row,
   BettingAction, RoundResult, Player,
 } from './types';
 import { createDeck, dealHands, resetIdCounter, getCardNumericValue } from './deck';
@@ -64,6 +67,7 @@ export function playCard(
   side: PlayerSide,
   cardId: string,
   targetRow: Row,
+  useAbility: boolean = true,
 ): GameState {
   const player = { ...getPlayer(state, side) };
   const cardIndex = player.hand.findIndex(c => c.id === cardId);
@@ -76,7 +80,7 @@ export function playCard(
   // Check row capacity (max 5)
   if (player.board[targetRow].cards.length >= 5) return state;
 
-  // Handle Joker (Weather) — played to center, affects both rows
+  // Handle Joker (Weather) — always activates, no value-only option
   if (card.type === 'joker') {
     player.hand = newHand;
     const next: GameState = {
@@ -88,9 +92,24 @@ export function playCard(
     return next;
   }
 
-  // Handle Face Cards with abilities
+  // Handle Face Cards
   if (card.type === 'face') {
-    return handleFaceCard(state, side, card, targetRow, newHand);
+    if (useAbility) {
+      // Activate ability — card is marked exhausted (excluded from hand eval)
+      return handleFaceCard(state, side, { ...card, abilityUsed: true }, targetRow, newHand);
+    }
+    // Play as value card — no ability, counts in hand evaluation
+    const valueCard: FaceCard = { ...card, abilityUsed: false };
+    const newBoard = {
+      ...player.board,
+      [targetRow]: { cards: [...player.board[targetRow].cards, valueCard] },
+    };
+    player.board = newBoard;
+    return {
+      ...state,
+      [side]: player,
+      turnNumber: state.turnNumber + 1,
+    };
   }
 
   // Number card: place on row
@@ -121,10 +140,10 @@ function handleFaceCard(
 
   switch (card.faceRank) {
     case 'jack': {
-      // Spy: Played on OPPONENT's board, player draws 2 cards
+      // Spy: Played on OPPONENT's board (exhausted), player draws 2 cards
       const oppBoard = {
         ...opponent.board,
-        [targetRow]: { cards: [...opponent.board[targetRow].cards, card] },
+        [targetRow]: { cards: [...opponent.board[targetRow].cards, { ...card, abilityUsed: true }] },
       };
       opponent.board = oppBoard;
 
@@ -243,15 +262,12 @@ export function processBet(
   amount: number = 0,
 ): GameState {
   const player = { ...getPlayer(state, side) };
-  const opponentSide = getOpponent(side);
-  const opponent = { ...getPlayer(state, opponentSide) };
-
   switch (action) {
     case 'check':
       return { ...state, [side]: player };
 
     case 'bet': {
-      const betAmt = Math.min(amount, player.chips);
+      const betAmt = Math.max(0, Math.min(amount, player.chips));
       player.chips -= betAmt;
       return {
         ...state,
@@ -263,7 +279,7 @@ export function processBet(
     }
 
     case 'call': {
-      const callAmt = Math.min(state.currentBet, player.chips);
+      const callAmt = Math.max(0, Math.min(state.currentBet, player.chips));
       player.chips -= callAmt;
       return {
         ...state,
@@ -275,7 +291,7 @@ export function processBet(
     }
 
     case 'raise': {
-      const raiseAmt = Math.min(amount, player.chips);
+      const raiseAmt = Math.max(0, Math.min(amount, player.chips));
       player.chips -= raiseAmt;
       return {
         ...state,
@@ -294,13 +310,17 @@ export function processBet(
 }
 
 export function payAnte(state: GameState, config: GameConfig = DEFAULT_CONFIG): GameState {
-  const human = { ...state.human, chips: state.human.chips - config.anteAmount };
-  const ai = { ...state.ai, chips: state.ai.chips - config.anteAmount };
+  // Ante escalates: base + 5 per round (Round 1: 10, Round 2: 15, Round 3: 20)
+  const scaledAnte = config.anteAmount + (state.currentRound - 1) * 5;
+  const humanAnte = Math.min(scaledAnte, state.human.chips);
+  const aiAnte = Math.min(scaledAnte, state.ai.chips);
+  const human = { ...state.human, chips: state.human.chips - humanAnte };
+  const ai = { ...state.ai, chips: state.ai.chips - aiAnte };
   return {
     ...state,
     human,
     ai,
-    pot: state.pot + config.anteAmount * 2,
+    pot: state.pot + humanAnte + aiAnte,
   };
 }
 
@@ -330,29 +350,11 @@ export function evaluateRound(state: GameState): RoundResult {
     else roundWinner = 'tie';
   }
 
-  // Apply King penalty
-  const kingPenalty = 5;
-  let potAwarded = state.pot;
-
-  // Check for kings in winning rows
-  if (frontlineWinner === 'human') {
-    const humanKings = state.human.board.frontline.cards.filter(
-      c => c.type === 'face' && c.faceRank === 'king'
-    ).length;
-    potAwarded += humanKings * kingPenalty; // will be deducted from AI
-  }
-  if (frontlineWinner === 'ai') {
-    const aiKings = state.ai.board.frontline.cards.filter(
-      c => c.type === 'face' && c.faceRank === 'king'
-    ).length;
-    potAwarded += aiKings * kingPenalty;
-  }
-
   return {
     frontlineWinner,
     backlineWinner,
     roundWinner,
-    potAwarded,
+    potAwarded: state.pot,
     humanFrontlineEval: humanFront,
     humanBacklineEval: humanBack,
     aiFrontlineEval: aiFront,
@@ -374,7 +376,7 @@ export function applyRoundResult(state: GameState, result: RoundResult): GameSta
   }
   // Tie: pot carries over
 
-  // King penalties
+  // King penalties — transfer from loser to winner, clamped so chips never go negative
   const applyKingPenalty = (winner: PlayerSide | 'tie', row: 'frontline' | 'backline') => {
     if (winner === 'tie') return;
     const winnerPlayer = winner === 'human' ? human : ai;
@@ -382,7 +384,9 @@ export function applyRoundResult(state: GameState, result: RoundResult): GameSta
     const kings = winnerPlayer.board[row].cards.filter(
       c => c.type === 'face' && c.faceRank === 'king'
     ).length;
-    loserPlayer.chips -= kings * 5;
+    const penalty = Math.min(kings * 5, loserPlayer.chips);
+    loserPlayer.chips -= penalty;
+    winnerPlayer.chips += penalty;
   };
   applyKingPenalty(result.frontlineWinner, 'frontline');
   applyKingPenalty(result.backlineWinner, 'backline');

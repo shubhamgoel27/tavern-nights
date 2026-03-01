@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BettingAction } from '../game/types';
+import type { BettingAction } from '../game/types';
 
 interface BettingPanelProps {
   onBet: (action: BettingAction, amount: number) => void;

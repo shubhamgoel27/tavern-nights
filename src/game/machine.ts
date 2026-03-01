@@ -2,8 +2,8 @@
 // Governs the strict turn flow of Tavern Tactics.
 
 import { assign, setup } from 'xstate';
-import {
-  GameState, Row, BettingAction, PlayerSide, DEFAULT_CONFIG,
+import type {
+  GameState, Row, BettingAction,
 } from './types';
 import {
   createInitialState, playCard, processBet, payAnte,
@@ -13,7 +13,7 @@ import { getAIDecision, getAIBetDecision } from './ai';
 
 export type GameEvent =
   | { type: 'START_MATCH' }
-  | { type: 'PLAY_CARD'; cardId: string; targetRow: Row }
+  | { type: 'PLAY_CARD'; cardId: string; targetRow: Row; useAbility?: boolean }
   | { type: 'BET'; action: BettingAction; amount: number }
   | { type: 'AI_TURN' }
   | { type: 'AI_BET' }
@@ -60,7 +60,10 @@ export const gameMachine = setup({
     roundStart: {
       entry: assign({
         game: ({ context }) => payAnte(context.game),
-        message: ({ context }) => `Round ${context.game.currentRound} — Ante paid. Your turn.`,
+        message: ({ context }) => {
+          const ante = 10 + (context.game.currentRound - 1) * 5;
+          return `Round ${context.game.currentRound} — Ante ${ante} chips. Your turn.`;
+        },
       }),
       always: { target: 'playerTurn' },
     },
@@ -78,7 +81,7 @@ export const gameMachine = setup({
           },
           actions: assign({
             game: ({ context, event }) =>
-              playCard(context.game, 'human', event.cardId, event.targetRow),
+              playCard(context.game, 'human', event.cardId, event.targetRow, event.useAbility ?? true),
             message: 'Card played. Betting phase.',
           }),
         },
@@ -119,7 +122,8 @@ export const gameMachine = setup({
         BET: [
           {
             target: 'checkRound',
-            guard: ({ event }) => event.action === 'fold',
+            guard: ({ context, event }) =>
+              event.action === 'fold' && context.game.turnNumber > 1,
             actions: assign({
               game: ({ context, event }) =>
                 processBet(context.game, 'human', event.action, event.amount),
@@ -177,7 +181,7 @@ export const gameMachine = setup({
         }
 
         if (decision.action === 'play' && decision.cardId && decision.targetRow) {
-          const newGame = playCard(context.game, 'ai', decision.cardId, decision.targetRow);
+          const newGame = playCard(context.game, 'ai', decision.cardId, decision.targetRow, decision.useAbility ?? true);
 
           // AI bets after playing
           const { action: betAction, amount } = getAIBetDecision(newGame);

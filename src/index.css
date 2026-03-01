@@ -89,3 +89,44 @@ body {
 .animate-fade-in {
   animation: fade-in 0.4s ease-out;
 }
+
+@keyframes tutorial-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(201, 168, 76, 0); }
+  50% { box-shadow: 0 0 0 4px rgba(201, 168, 76, 0.3), inset 0 0 0 1px rgba(201, 168, 76, 0.1); }
+}
+
+[data-tutorial-highlight="true"] {
+  animation: tutorial-pulse 1.5s ease-in-out infinite;
+  border-radius: 12px;
+  position: relative;
+  z-index: 30;
+}
+
+.volume-slider {
+  writing-mode: vertical-lr;
+  direction: rtl;
+  appearance: none;
+  width: 4px;
+  height: 80px;
+  background: var(--color-tavern-border);
+  border-radius: 2px;
+  outline: none;
+}
+
+.volume-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-tavern-gold);
+  cursor: pointer;
+}
+
+.volume-slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-tavern-gold);
+  cursor: pointer;
+  border: none;
+}

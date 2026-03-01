@@ -2,7 +2,7 @@
 // Evaluates 1-5 card poker hands for row comparison.
 // Uses direct algorithmic evaluation (no external library needed).
 
-import { Card, HandEvaluation, HandRank } from './types';
+import type { Card, HandEvaluation, HandRank } from './types';
 
 function getNumericValues(cards: Card[]): number[] {
   return cards.map(c => {
@@ -53,8 +53,10 @@ function getGroupings(values: number[]): Map<number, number> {
 }
 
 export function evaluateHand(cards: Card[], weatherActive: boolean = false): HandEvaluation {
-  // Filter out jokers for evaluation (they act as weather, not hand members)
-  const evalCards = cards.filter(c => c.type !== 'joker');
+  // Filter out jokers and exhausted face cards (ability was used → excluded from scoring)
+  const evalCards = cards.filter(c =>
+    c.type !== 'joker' && !(c.type === 'face' && c.abilityUsed)
+  );
 
   if (evalCards.length === 0) {
     return { rank: 'high-card', rankValue: 0, highCards: [0], description: 'Empty' };

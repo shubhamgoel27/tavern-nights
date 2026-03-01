@@ -21,6 +21,7 @@ export interface FaceCard {
   suit: Suit;
   faceRank: FaceRank;
   id: string;
+  abilityUsed?: boolean; // true = exhausted (ability fired, excluded from hand eval)
 }
 
 export interface JokerCard {
@@ -91,7 +92,7 @@ export interface GameConfig {
 
 export const DEFAULT_CONFIG: GameConfig = {
   startingChips: 100,
-  anteAmount: 5,
+  anteAmount: 10,
   minBet: 5,
   roundsToWin: 2,
 };

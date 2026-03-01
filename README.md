@@ -1,73 +1,69 @@
-# React + TypeScript + Vite
+# Tavern Tactics
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Poker meets Gwent in a medieval tavern. Outsmart the house, bluff your way to glory, and don't blow all your chips on round one.**
 
-Currently, two official plugins are available:
+![Tavern Tactics](images/game_screen.png)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## What Is This?
 
-## React Compiler
+Tavern Tactics is a single-player strategy card game where you build poker hands across two rows (Frontline and Backline) while managing a shared chip economy across multiple rounds. Think Texas Hold'em had a baby with The Witcher's Gwent — and they raised it in a dimly lit tavern.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+You get 10 cards. They have to last you the whole match. Every card you slam down now is one fewer you'll have later. Choose wisely... or don't. We're not your mom.
 
-## Expanding the ESLint configuration
+## How It Works
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **Best of 3 rounds** — first to win 2 rounds takes the match
+- **Two rows per player** — Frontline and Backline. Win BOTH to win the round
+- **Hidden cards** — you can't see your opponent's board until the showdown. Bluff accordingly
+- **Escalating antes** — 10 / 15 / 20 chips per round. Folding gets expensive fast
+- **Face cards have abilities** — Spy, Medic, Commander, Scorcher, and Weather. But here's the twist: you choose whether to activate the ability (card becomes dead weight in your hand) or play it as a high-value poker card (no ability). Big brain decisions only
+- **Betting system** — check, bet, raise, call, or fold. Just like poker night, except you won't lose your rent money
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## The Face Cards
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+| Card | Ability | Value |
+|------|---------|-------|
+| Jack (Spy) | Goes to opponent's board + you draw 2 | 11 |
+| Queen (Medic) | Revives best card from graveyard | 12 |
+| King (Commander) | Win this row = opponent loses 5 extra chips | 13 |
+| Ace (Scorcher) | Destroys opponent's strongest card in row | 14 |
+| Joker (Weather) | Disables all flushes for the round | - |
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+**The catch:** if you use the ability, the card doesn't count toward your poker hand. Choose wisely.
+
+## Tech Stack
+
+- React 19 + TypeScript
+- XState 5 (state machine for game flow)
+- Tailwind CSS 4 (medieval tavern aesthetic)
+- Vite 7
+
+## Run It Locally
+
+```bash
+# Clone it
+git clone https://github.com/shubhamgoel27/tavern-nights.git
+cd tavern-nights
+
+# Install dependencies
+npm install
+
+# Fire it up
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Then open [http://localhost:5173](http://localhost:5173) and enter the tavern.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Tips For Not Getting Destroyed
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+1. **Don't dump all your cards in round 1.** Seriously. Save 3-4 for later
+2. **Balance both rows.** A killer Frontline means nothing if your Backline is empty
+3. **Bluff early, play tight late.** Your opponent can't see your cards — use that
+4. **Face card timing matters.** Queens are useless in round 1 (empty graveyard). Aces are best when there's something worth destroying
+5. **Know when to fold.** Losing 10 chips is better than losing 30 chasing a bad hand
+
+Press `?` during a game for a quick reference sheet.
+
+---
+
+Built with vibes and too much coffee.

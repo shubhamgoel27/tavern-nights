@@ -1,4 +1,4 @@
-import { Card, Row, HandEvaluation } from '../game/types';
+import type { Card, Row, HandEvaluation } from '../game/types';
 import PlayingCard from './PlayingCard';
 
 interface CardRowProps {
@@ -10,10 +10,11 @@ interface CardRowProps {
   isActive?: boolean;
   won?: boolean;
   lost?: boolean;
+  faceDown?: boolean;
 }
 
 export default function CardRow({
-  cards, row, isPlayer, onDropCard, evaluation, isActive, won, lost,
+  cards, row, isPlayer, onDropCard, evaluation, isActive, won, lost, faceDown,
 }: CardRowProps) {
   const label = row === 'frontline' ? 'Frontline' : 'Backline';
   const emptySlots = 5 - cards.length;
@@ -41,11 +42,19 @@ export default function CardRow({
         </span>
       </div>
 
-      {/* Evaluation display */}
-      {evaluation && cards.length > 0 && (
+      {/* Evaluation display — hidden when cards are face-down */}
+      {evaluation && cards.length > 0 && !faceDown && (
         <div className="absolute -top-2.5 right-3">
           <span className="text-[9px] font-medium text-tavern-text-dim glass px-2 py-0.5 rounded">
             {evaluation.description}
+          </span>
+        </div>
+      )}
+      {/* Card count when face-down */}
+      {faceDown && cards.length > 0 && (
+        <div className="absolute -top-2.5 right-3">
+          <span className="text-[9px] font-medium text-tavern-text-dim glass px-2 py-0.5 rounded">
+            {cards.length} {cards.length === 1 ? 'card' : 'cards'}
           </span>
         </div>
       )}
@@ -54,7 +63,7 @@ export default function CardRow({
       <div className="flex gap-1.5 items-center justify-center mt-2">
         {cards.map((card) => (
           <div key={card.id} className="animate-slide-up">
-            <PlayingCard card={card} small />
+            <PlayingCard card={card} small faceDown={faceDown} />
           </div>
         ))}
         {isPlayer && Array.from({ length: emptySlots }).map((_, i) => (
