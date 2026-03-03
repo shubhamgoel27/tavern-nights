@@ -35,7 +35,7 @@ export default function CheatSheet() {
       {/* Overlay */}
       {isOpen && (
         <div
-          className="absolute inset-0 bg-tavern-bg/60 backdrop-blur-sm z-50 flex items-center justify-center"
+          className="fixed inset-0 bg-tavern-bg/60 backdrop-blur-sm z-50 flex items-center justify-center"
           onClick={() => setIsOpen(false)}
         >
           <div

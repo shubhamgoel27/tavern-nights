@@ -27,7 +27,7 @@ export default function HowToPlayModal({ onClose }: HowToPlayModalProps) {
 
   return (
     <div
-      className="absolute inset-0 bg-tavern-bg/80 backdrop-blur-sm flex items-center justify-center z-50"
+      className="fixed inset-0 bg-tavern-bg/80 backdrop-blur-sm flex items-center justify-center z-50"
       onClick={onClose}
     >
       <div

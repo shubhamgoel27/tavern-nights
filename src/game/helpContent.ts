@@ -66,7 +66,7 @@ export const GAME_RULES: { label: string; text: string }[] = [
   },
   {
     label: 'The Board',
-    text: 'Each player has 2 rows: Frontline and Backline. Place cards to build poker hands (max 5 cards per row). You must win BOTH rows to win the round. Opponent\'s cards are hidden until the round ends — read their bets to gauge their strength.',
+    text: 'Each player has 2 rows: Frontline and Backline. Place cards to build poker hands (max 5 cards per row). You must win BOTH rows to win the round. You can see your opponent\'s board cards as they play them — use this to adapt your strategy in real time.',
   },
   {
     label: 'Turn Flow',
@@ -74,7 +74,7 @@ export const GAME_RULES: { label: string; text: string }[] = [
   },
   {
     label: 'Your Hand',
-    text: 'You start with 10 cards from a 54-card deck (36 number cards, 16 face cards, 2 jokers). Cards carry over between rounds — what you don\'t play now, you keep for later.',
+    text: 'You start with 10 cards from a 54-card deck (36 number cards, 16 face cards, 2 jokers). Cards carry over between rounds — what you don\'t play now, you keep for later. At the start of each new round, both players draw 2 fresh cards from the deck.',
   },
   {
     label: 'Betting',
@@ -101,7 +101,7 @@ export const STRATEGY_TIPS: { label: string; text: string }[] = [
   },
   {
     label: 'Conserve Cards',
-    text: 'Your 10 cards must last the entire match. Playing 7+ cards in round 1 leaves you nearly empty for later. Aim for 3-4 cards per round, adjusting based on stakes.',
+    text: 'You draw 2 new cards each round, but that won\'t replace heavy spending. Playing 7+ cards in round 1 leaves you thin for later. Aim for 3-5 cards per round, adjusting based on stakes.',
   },
   {
     label: 'Know When to Fold',
@@ -117,7 +117,7 @@ export const STRATEGY_TIPS: { label: string; text: string }[] = [
   },
   {
     label: 'Bluffing & Bet Sizing',
-    text: 'Your opponent can\'t see your cards until the round ends — use this! A big bet can force a fold even with a weak board. Small bets probe. But bluffing too often becomes predictable — and losing a big bluff is costly with escalating antes.',
+    text: 'Both players can see each other\'s board cards, but hand evaluations shift with every new card. A big bet can force a fold even if your board looks weak — your opponent doesn\'t know what you\'re holding. Small bets probe. But bluffing too often becomes predictable — and losing a big bluff is costly with escalating antes.',
   },
   {
     label: 'Watch the Graveyard',
@@ -125,6 +125,6 @@ export const STRATEGY_TIPS: { label: string; text: string }[] = [
   },
   {
     label: 'Round-by-Round Thinking',
-    text: 'Round 1: Establish position, avoid over-investing. Round 2: Adapt based on round 1 results and remaining cards. Round 3: Go all-in with whatever you have — nothing to save for.',
+    text: 'Round 1: Establish position, avoid over-investing. Round 2: Adapt based on round 1 results — the 2 fresh cards may open new combinations. Round 3: Go all-in with whatever you have — nothing to save for.',
   },
 ];

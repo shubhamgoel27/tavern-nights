@@ -405,6 +405,15 @@ export function applyRoundResult(state: GameState, result: RoundResult): GameSta
   human.hasPassed = false;
   ai.hasPassed = false;
 
+  // Deal 2 new cards to each player from deck between rounds
+  let remainingDeck = state.deck;
+  const humanDraw = remainingDeck.slice(0, Math.min(2, remainingDeck.length));
+  remainingDeck = remainingDeck.slice(humanDraw.length);
+  const aiDraw = remainingDeck.slice(0, Math.min(2, remainingDeck.length));
+  remainingDeck = remainingDeck.slice(aiDraw.length);
+  human.hand = [...human.hand, ...humanDraw];
+  ai.hand = [...ai.hand, ...aiDraw];
+
   // Check for match win
   let matchWinner: PlayerSide | null = null;
   if (human.roundsWon >= 2) matchWinner = 'human';
@@ -416,6 +425,7 @@ export function applyRoundResult(state: GameState, result: RoundResult): GameSta
     ...state,
     human,
     ai,
+    deck: remainingDeck,
     graveyard: [...state.graveyard, ...boardCards],
     pot: result.roundWinner === 'tie' ? state.pot : 0, // carry pot on tie
     currentRound: state.currentRound + 1,

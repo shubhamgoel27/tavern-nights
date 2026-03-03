@@ -62,7 +62,8 @@ export const gameMachine = setup({
         game: ({ context }) => payAnte(context.game),
         message: ({ context }) => {
           const ante = 10 + (context.game.currentRound - 1) * 5;
-          return `Round ${context.game.currentRound} — Ante ${ante} chips. Your turn.`;
+          const drawNote = context.game.currentRound > 1 ? ' +2 cards drawn.' : '';
+          return `Round ${context.game.currentRound} — Ante ${ante} chips.${drawNote} Your turn.`;
         },
       }),
       always: { target: 'playerTurn' },

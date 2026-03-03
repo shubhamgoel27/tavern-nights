@@ -19,7 +19,7 @@ export const TUTORIAL_STEPS: TutorialStepDef[] = [
   },
   {
     message: 'Your goal: win BOTH rows to win the round.',
-    subtext: 'Win 2 rounds to win the match. Your 10 cards must last the entire match — every card you play now is one fewer for later rounds.',
+    subtext: 'Win 2 rounds to win the match. You start with 10 cards and draw 2 more each round — but spend wisely, every card counts.',
     highlight: 'none',
     position: 'right',
   },
@@ -43,7 +43,7 @@ export const TUTORIAL_STEPS: TutorialStepDef[] = [
   },
   {
     message: 'Your opponent is playing...',
-    subtext: "Watch what they place — it reveals their strategy. If they bet, weigh the risk: Call to stay in, or Fold to save your chips for a better round.",
+    subtext: "You can see their board cards — watch what they place to read their strategy. If they bet, weigh the risk: Call to stay in, or Fold to save your chips for a better round.",
     highlight: 'none',
     position: 'right',
   },
@@ -67,7 +67,7 @@ export const TUTORIAL_STEPS: TutorialStepDef[] = [
   },
   {
     message: "Think long-term — you've got this!",
-    subtext: "Don't play all cards in round 1! Save 3-4 for later. If you're winning a small pot, consider folding to conserve. Press ? anytime for a quick reference.",
+    subtext: "Don't play all cards in round 1! You'll draw 2 fresh cards next round, but save 3-4 anyway. If you're winning a small pot, consider folding to conserve. Press ? anytime for a quick reference.",
     highlight: 'none',
     position: 'center',
   },

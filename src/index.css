@@ -18,6 +18,36 @@
   --color-suit-clubs: #90a8b8;
   --color-suit-spades: #b0b8c0;
 
+  /* Suit gradient backgrounds */
+  --color-suit-hearts-bg: #3d1515;
+  --color-suit-diamonds-bg: #3d2215;
+  --color-suit-clubs-bg: #152030;
+  --color-suit-spades-bg: #1a1a2e;
+
+  /* Suit glows */
+  --color-suit-hearts-glow: #c04040;
+  --color-suit-diamonds-glow: #c06040;
+  --color-suit-clubs-glow: #4080c0;
+  --color-suit-spades-glow: #6070a0;
+
+  /* Card frame */
+  --color-card-frame: #4a3c2e;
+  --color-card-inner: #2a2018;
+  --color-card-stat-bar: #1e1810;
+
+  /* Joker */
+  --color-joker-bg: #2a1830;
+  --color-joker-glow: #8040c0;
+
+  /* Row theming */
+  --color-row-frontline: #3a1818;
+  --color-row-frontline-border: #6a3030;
+  --color-row-backline: #18283a;
+  --color-row-backline-border: #304060;
+
+  /* Atmosphere */
+  --color-candlelight: #c9944c;
+
   --font-display: "Cinzel", serif;
   --font-body: "Inter", system-ui, sans-serif;
 }
@@ -53,14 +83,20 @@ body {
   box-shadow: 0 0 15px rgba(201, 168, 76, 0.2), 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
+/* Enhanced card transition — spring feel */
 .card-transition {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
 }
 
 .card-transition:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 0 20px rgba(201, 168, 76, 0.3), 0 8px 20px rgba(0, 0, 0, 0.5);
+  transform: translateY(-6px) scale(1.03);
+  box-shadow:
+    0 0 20px rgba(201, 168, 76, 0.25),
+    0 8px 24px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(201, 168, 76, 0.1);
 }
+
+/* ── Keyframe Animations ── */
 
 @keyframes ability-flash {
   0% { box-shadow: 0 0 0 rgba(201, 168, 76, 0); }
@@ -100,6 +136,186 @@ body {
   border-radius: 12px;
   position: relative;
   z-index: 30;
+}
+
+/* Shimmer — sliding gold highlight */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.card-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(201, 168, 76, 0.08) 40%,
+    rgba(201, 168, 76, 0.15) 50%,
+    rgba(201, 168, 76, 0.08) 60%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 3s linear infinite;
+}
+
+/* Card playable pulse — gentle gold glow */
+@keyframes card-pulse {
+  0%, 100% { box-shadow: 0 0 0 rgba(201, 168, 76, 0); }
+  50% { box-shadow: 0 0 12px rgba(201, 168, 76, 0.3); }
+}
+
+.card-playable {
+  animation: card-pulse 2s ease-in-out infinite;
+}
+
+/* Row win/lose pulse */
+@keyframes row-win-pulse {
+  0%, 100% { box-shadow: inset 0 0 0 rgba(74, 154, 74, 0); }
+  50% { box-shadow: inset 0 0 20px rgba(74, 154, 74, 0.15); }
+}
+
+@keyframes row-lose-pulse {
+  0%, 100% { box-shadow: inset 0 0 0 rgba(180, 64, 64, 0); }
+  50% { box-shadow: inset 0 0 20px rgba(180, 64, 64, 0.15); }
+}
+
+.row-won {
+  animation: row-win-pulse 2s ease-in-out infinite;
+}
+
+.row-lost {
+  animation: row-lose-pulse 2s ease-in-out infinite;
+}
+
+/* Turn glow — breathing opacity */
+@keyframes turn-glow {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+.turn-active {
+  animation: turn-glow 2s ease-in-out infinite;
+}
+
+/* Float particle — ember floating upward */
+@keyframes float-particle {
+  0% {
+    transform: translateY(0) translateX(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.6;
+  }
+  90% {
+    opacity: 0.3;
+  }
+  100% {
+    transform: translateY(-100vh) translateX(30px);
+    opacity: 0;
+  }
+}
+
+/* Message fade */
+@keyframes message-fade {
+  0% { opacity: 0; transform: translateY(4px); }
+  15% { opacity: 1; transform: translateY(0); }
+  85% { opacity: 1; }
+  100% { opacity: 0.7; }
+}
+
+.animate-message {
+  animation: message-fade 2s ease-out forwards;
+}
+
+/* Chip pop — scale bounce */
+@keyframes chip-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+.chip-pop {
+  animation: chip-pop 0.3s ease-out;
+}
+
+/* ── CSS Texture Classes ── */
+
+/* Card back pattern — repeating diagonal gold lines */
+.card-back-pattern {
+  background:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 4px,
+      rgba(201, 168, 76, 0.08) 4px,
+      rgba(201, 168, 76, 0.08) 5px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 4px,
+      rgba(201, 168, 76, 0.06) 4px,
+      rgba(201, 168, 76, 0.06) 5px
+    ),
+    linear-gradient(135deg, var(--color-tavern-card), var(--color-tavern-surface));
+}
+
+/* Row patterns — subtle crosshatch */
+.row-pattern-frontline {
+  background:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 8px,
+      rgba(180, 64, 64, 0.03) 8px,
+      rgba(180, 64, 64, 0.03) 9px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 8px,
+      rgba(180, 64, 64, 0.02) 8px,
+      rgba(180, 64, 64, 0.02) 9px
+    );
+}
+
+.row-pattern-backline {
+  background:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 8px,
+      rgba(64, 128, 192, 0.03) 8px,
+      rgba(64, 128, 192, 0.03) 9px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 8px,
+      rgba(64, 128, 192, 0.02) 8px,
+      rgba(64, 128, 192, 0.02) 9px
+    );
+}
+
+/* Table texture — radial candlelight spots */
+.table-texture {
+  background:
+    radial-gradient(ellipse 600px 400px at 30% 40%, rgba(201, 148, 76, 0.04) 0%, transparent 70%),
+    radial-gradient(ellipse 500px 350px at 70% 60%, rgba(201, 148, 76, 0.03) 0%, transparent 70%),
+    var(--color-tavern-bg);
+}
+
+/* Board vignette — dark edge */
+.board-vignette {
+  position: relative;
+}
+
+.board-vignette::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background: radial-gradient(ellipse at center, transparent 50%, rgba(0, 0, 0, 0.4) 100%);
 }
 
 .volume-slider {
